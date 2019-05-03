@@ -1,0 +1,39 @@
+{
+  "name": "Yello",
+  "version": "1.0.0",
+  "description": "Kinda like Trello but... ya know",
+  "main": "index.js",
+  "repository": "git@github.com:AdamT213/Yello.git",
+  "author": "Adam Tropp <adt6261@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "dev": "nodemon server/app.js --watch",
+    "build": "next build",
+    "start": "NODE_ENV=production node server/app.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@emotion/babel-preset-css-prop": "^10.0.9",
+    "@emotion/core": "^10.0.10",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^8.0.0",
+    "express": "^4.16.4",
+    "express-graphql": "^0.8.0",
+    "graphql": "^14.2.1",
+    "mongodb": "^3.2.3",
+    "next": "^8.1.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-plugin-graphql": "^3.0.3",
+    "eslint-plugin-react": "^7.13.0",
+    "jest": "^24.7.1",
+    "mongodb-memory-server": "^5.1.0",
+    "nodemon": "^1.19.0",
+    "prettier": "^1.17.0"
+  }
+}
