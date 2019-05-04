@@ -28,24 +28,17 @@ app.prepare().then(async () => {
     });
 
     const db = client.db(process.env.dbName);
-    const Projects = db.collection("projects");
     const Boards = db.collection("boards");
     const Lists = db.collection("lists");
     const Cards = db.collection("cards");
 
     const resolvers = {
-      project: async args => Projects.findOne(args),
-      projects: async () => Projects.find({}).toArray(),
       board: async args => Boards.findOne(args),
       boards: async () => Boards.find({}).toArray(),
       list: async args => Lists.findOne(args),
       lists: async () => Lists.find({}).toArray(),
       card: async args => Cards.findOne(args),
       cards: async () => Cards.find({}).toArray(),
-      createProject: async args => {
-        const project = await Projects.insertOne(args);
-        return project.ops[0];
-      },
       createBoard: async args => {
         const board = await Boards.insertOne(args);
         return board.ops[0];
