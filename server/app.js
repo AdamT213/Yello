@@ -50,6 +50,101 @@ app.prepare().then(async () => {
       createCard: async args => {
         const card = await Cards.insertOne(args);
         return card.ops[0];
+      },
+      createUser: async args => {
+        args.password = bcrypt.hashSync(args.password, 10);
+        const res = await db.collection("users").insertOne(args);
+        return res.ops[0];
+      },
+      addListToBoard: async args => {
+        try {
+          const res = await db
+            .collection("boards")
+            .updateOne(
+              { _id: args.board_id },
+              { $push: { lists: { _id: args._id, title: args.title } } }
+            );
+          return res.modifiedCount;
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      addBoardToUser: async args => {
+        const res = await db
+          .collection("users")
+          .updateOne(
+            { _id: args.user_id },
+            { $set: { boards: [{ _id: args._id }] } }
+          );
+        return res.modifiedCount;
+      },
+      addMemberToBoard: async args => {
+        const res = await db
+          .collection("boards")
+          .updateOne(
+            { _id: args.board_id },
+            { $push: { members: { _id: args._id } } }
+          );
+        return res.modifiedCount;
+      },
+      addCardToList: async args => {
+        try {
+          const res = await db.collection("boards").updateOne(
+            { _id: args.board_id, "lists._id": args.list_id },
+            {
+              $push: {
+                "lists.$.cards": {
+                  _id: args._id
+                }
+              }
+            }
+          );
+          return res.modifiedCount;
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      removeCardFromList: async args => {
+        const res = await db.collection("boards").updateOne(
+          {
+            _id: args.board_id,
+            "lists._id": args.list_id
+          },
+          { $pull: { "lists.$.cards": { _id: args._id } } }
+        );
+        return res.modifiedCount;
+      },
+      addListItemToCard: async args => {
+        try {
+          const res = await db.collection("cards").updateOne(
+            { _id: args.card_id },
+            {
+              $push: {
+                checklist: {
+                  _id: args._id,
+                  description: args.description,
+                  status: args.status
+                }
+              }
+            }
+          );
+          return res.modifiedCount;
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      markListItemComplete: async args => {
+        try {
+          const res = await db
+            .collection("cards")
+            .updateOne(
+              { _id: args.card_id },
+              { $set: { "checklist.0": [{ status: true }] } }
+            );
+          return res.modifiedCount;
+        } catch (e) {
+          console.error(e);
+        }
       }
     };
     exports.resolvers = resolvers;
