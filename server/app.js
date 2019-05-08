@@ -1,9 +1,12 @@
 const next = require("next");
 const express = require("express");
+const jwt = require("express-jwt");
 const graphqlHTTP = require("express-graphql");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
+const jsonwebtoken = require("jsonwebtoken");
 const schema = require("./graphql/schema");
 
 require("dotenv").config();
@@ -29,67 +32,81 @@ app.prepare().then(async () => {
 
     const db = client.db(process.env.dbName);
     const Boards = db.collection("boards");
-    const Lists = db.collection("lists");
     const Cards = db.collection("cards");
+    const Users = db.collection("users");
 
     const resolvers = {
       board: async args => Boards.findOne(args),
       boards: async () => Boards.find({}).toArray(),
-      list: async args => Lists.findOne(args),
-      lists: async () => Lists.find({}).toArray(),
       card: async args => Cards.findOne(args),
       cards: async () => Cards.find({}).toArray(),
       createBoard: async args => {
         const board = await Boards.insertOne(args);
         return board.ops[0];
       },
-      createList: async args => {
-        const list = await Lists.insertOne(args);
-        return list.ops[0];
-      },
       createCard: async args => {
         const card = await Cards.insertOne(args);
         return card.ops[0];
       },
-      createUser: async args => {
-        args.password = bcrypt.hashSync(args.password, 10);
-        const res = await db.collection("users").insertOne(args);
-        return res.ops[0];
+      signup: async ({ name, email, password }) => {
+        console.log(name);
+        const user = await Users.insertOne({
+          name,
+          email,
+          password: await bcrypt.hash(password, 10)
+        });
+        // return json web token
+        return jsonwebtoken.sign(
+          { _id: user._id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: "1y" }
+        );
+      },
+      login: async ({ email, password }) => {
+        console.log(email);
+        const user = await Users.findOne({ email: email });
+        if (!user) {
+          throw new Error("No user with that email");
+        }
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+          throw new Error("Incorrect password");
+        }
+        // return json web token
+        return jsonwebtoken.sign(
+          { id: user.id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: "1d" }
+        );
       },
       addListToBoard: async args => {
         try {
-          const res = await db
-            .collection("boards")
-            .updateOne(
-              { _id: args.board_id },
-              { $push: { lists: { _id: args._id, title: args.title } } }
-            );
+          const res = await Boards.updateOne(
+            { _id: args.board_id },
+            { $push: { lists: { _id: args._id, title: args.title } } }
+          );
           return res.modifiedCount;
         } catch (e) {
           console.error(e);
         }
       },
       addBoardToUser: async args => {
-        const res = await db
-          .collection("users")
-          .updateOne(
-            { _id: args.user_id },
-            { $set: { boards: [{ _id: args._id }] } }
-          );
+        const res = await Users.updateOne(
+          { _id: args.user_id },
+          { $set: { boards: [{ _id: args._id }] } }
+        );
         return res.modifiedCount;
       },
       addMemberToBoard: async args => {
-        const res = await db
-          .collection("boards")
-          .updateOne(
-            { _id: args.board_id },
-            { $push: { members: { _id: args._id } } }
-          );
+        const res = await Boards.updateOne(
+          { _id: args.board_id },
+          { $push: { members: { _id: args._id } } }
+        );
         return res.modifiedCount;
       },
       addCardToList: async args => {
         try {
-          const res = await db.collection("boards").updateOne(
+          const res = await Boards.updateOne(
             { _id: args.board_id, "lists._id": args.list_id },
             {
               $push: {
@@ -105,7 +122,7 @@ app.prepare().then(async () => {
         }
       },
       removeCardFromList: async args => {
-        const res = await db.collection("boards").updateOne(
+        const res = await Boards.updateOne(
           {
             _id: args.board_id,
             "lists._id": args.list_id
@@ -116,7 +133,7 @@ app.prepare().then(async () => {
       },
       addListItemToCard: async args => {
         try {
-          const res = await db.collection("cards").updateOne(
+          const res = await Cards.updateOne(
             { _id: args.card_id },
             {
               $push: {
@@ -135,12 +152,10 @@ app.prepare().then(async () => {
       },
       markListItemComplete: async args => {
         try {
-          const res = await db
-            .collection("cards")
-            .updateOne(
-              { _id: args.card_id },
-              { $set: { "checklist.0": [{ status: true }] } }
-            );
+          const res = await Cards.updateOne(
+            { _id: args.card_id },
+            { $set: { "checklist.0": [{ status: true }] } }
+          );
           return res.modifiedCount;
         } catch (e) {
           console.error(e);
@@ -150,6 +165,21 @@ app.prepare().then(async () => {
     exports.resolvers = resolvers;
 
     const server = express();
+
+    server.use(
+      jwt({
+        secret: process.env.JWT_SECRET,
+        credentialsRequired: false
+      }).unless({ path: ["/login", "/signup", "/graphql"] })
+    );
+
+    server.use((err, req, res, next) => {
+      if (err.name === "UnauthorizedError") {
+        return res.redirect("/login");
+      }
+      next();
+    });
+
     server.use(
       "/graphql",
       cors(),
@@ -162,8 +192,12 @@ app.prepare().then(async () => {
       })
     );
 
-    server.get("/", (req, res) => {
+    server.get("*", (req, res) => {
       handle(req, res);
+    });
+
+    server.get("/user/:slug", (req, res) => {
+      return app.render(req, res, "/user", { slug: req.params.slug });
     });
 
     server.listen(port, err => {

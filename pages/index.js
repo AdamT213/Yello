@@ -1,5 +1,7 @@
 import { jsx } from "@emotion/core";
-import { Fragment } from "react";
+import React, { Fragment } from "react";
+import Router from "next/router";
+
 const tester = props => {
   return (
     <Fragment>

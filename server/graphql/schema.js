@@ -5,13 +5,11 @@ const {
   GraphQLDateTime
 } = require("graphql-iso-date");
 
-exports.schema = buildSchema(`
+const schema = buildSchema(`
       scalar GraphQLDate
       type Query {
         board(_id: ID): Board!
         boards: [Board!]!
-        list(_id: ID): List!
-        lists: [List]!
         card(_id: ID): Card!
         cards: [Card]!
       }
@@ -45,9 +43,9 @@ exports.schema = buildSchema(`
       }
       type Mutation {
         createBoard(_id: ID, project_id: ID): Board!
-        createList(_id: ID, board_id: ID): List!
         createCard(_id: ID, list_id: ID): Card!
-        createUser(_id: ID, name: String!, email: String!, password: String!): User!
+        signup(id:ID,name: String!, email: String!, password: String!): String
+        login(email: String!, password: String!): String
         addListToBoard(board_id: ID!, _id: ID!, title: String!): Int!
         addBoardToUser(user_id: ID!, _id: ID): Int!
         addMemberToBoard(board_id: ID!, _id: ID): Int!
@@ -58,3 +56,4 @@ exports.schema = buildSchema(`
       }
 `);
 // addListToCard(list_id: ID!, _id: ID): Int!
+module.exports = schema;
