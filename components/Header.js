@@ -4,7 +4,7 @@ const Header = props => {
   return (
     <div
       css={{
-        background: "rgb(216, 234, 77)",
+        background: "rgb(240, 210, 75)",
         color: "#fff",
         width: "100%",
         height: "10%",
@@ -13,7 +13,7 @@ const Header = props => {
       }}
       {...props}
     >
-      <h1>Yello</h1>
+      <h1 className="cursive">Yello</h1>
       <p>Kinda like Trello but...</p>
     </div>
   );

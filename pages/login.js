@@ -7,7 +7,7 @@ import Router from "next/router";
 
 const LOGIN = gql`
   mutation login($email: String!, $password: String!) {
-    signup(email: $email, password: $password)
+    login(email: $email, password: $password)
   }
 `;
 
@@ -31,19 +31,28 @@ const login = props => {
             <form
               onSubmit={async e => {
                 e.preventDefault();
-                await login({
+                const token = await login({
                   variables: {
                     email: email,
                     password: password
                   }
                 });
+                const timestamp = new Date().getTime();
+                const exp = timestamp + 60 * 60 * 24 * 1000 * 7;
+                document.cookie = `id_token=${
+                  token.data.login
+                }; expires=${exp}`;
                 setEmail("");
                 setPassword("");
-                Router.push(`localhost:3000/user/@${email}`);
+                Router.push({
+                  pathname: "/user",
+                  query: { email: email }
+                });
               }}
             >
               <div>
                 <label>Email:</label>
+                <br />
                 <input
                   type="text"
                   name="email"
@@ -51,8 +60,10 @@ const login = props => {
                   onChange={handleEmailChange}
                 />
               </div>
+              <br />
               <div>
                 <label>Password:</label>
+                <br />
                 <input
                   type="password"
                   name="password"
@@ -60,16 +71,19 @@ const login = props => {
                   onChange={handlePasswordChange}
                 />
               </div>
+              <br />
               <div>
-                <input type="submit" value="Log In" />
+                <button type="submit">Log In</button>
               </div>
+              <br />
             </form>
             {loading && <p>Loading...</p>}
-            {error && <p>Error :( Please try again</p>}
-            {data && <p>Successfully created Account!</p>}
+            {error && <p>Invalid email or password</p>}
+            {data && <p>Success!</p>}
           </div>
         )}
       </Mutation>
+      <br />
       <div>
         Don't have an account?
         <br />

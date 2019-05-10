@@ -9,9 +9,10 @@ const schema = buildSchema(`
       scalar GraphQLDate
       type Query {
         board(_id: ID): Board!
-        boards: [Board!]!
+        boards(user_id: ID): [Board!]!
         card(_id: ID): Card!
         cards: [Card]!
+        me: User
       }
       type Board {
         _id: ID!
@@ -22,11 +23,11 @@ const schema = buildSchema(`
       }
       type List {
         _id: ID!
+        title: String!
         cards: [Card!]!
       }
       type Card  {
         deadLine: GraphQLDate
-        List_id: ID!
         title: String!
         comments: [String!]!
         checklist: [listItem!]!
@@ -42,7 +43,7 @@ const schema = buildSchema(`
         password: String!
       }
       type Mutation {
-        createBoard(_id: ID, project_id: ID): Board!
+        createBoard(_id: ID, user_id: ID, title: String!, deadline: GraphQLDate): Board!
         createCard(_id: ID, list_id: ID): Card!
         signup(id:ID,name: String!, email: String!, password: String!): String
         login(email: String!, password: String!): String
@@ -55,5 +56,5 @@ const schema = buildSchema(`
         markListItemComplete(card_id: ID!, _id: ID): Int!
       }
 `);
-// addListToCard(list_id: ID!, _id: ID): Int!
+
 module.exports = schema;

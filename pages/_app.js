@@ -4,6 +4,7 @@ import withApolloClient from "../lib/with-apollo-client";
 import { ApolloProvider } from "react-apollo";
 import Header from "../components/Header";
 import AppStyle from "../components/AppStyle";
+import Navbar from "../components/Navbar";
 
 class MyApp extends App {
   render() {
@@ -13,6 +14,7 @@ class MyApp extends App {
         <ApolloProvider client={apolloClient}>
           <AppStyle />
           <Header />
+          <Navbar />
           <Component {...pageProps} />
         </ApolloProvider>
       </Container>

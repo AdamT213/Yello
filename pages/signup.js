@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { jsx } from "@emotion/core";
-import { Formik, Form, Field, FieldArray } from "formik";
 import { Mutation } from "react-apollo";
 import gql from "graphql-tag";
 import React, { Fragment, useState } from "react";
@@ -29,22 +28,6 @@ const signup = props => {
     setPassword(event.target.value);
   };
 
-  // const handleSubmit = async e => {
-  //   debugger;
-  //   e.preventDefault();
-  //   await signup({
-  //     variables: {
-  //       name: name,
-  //       email: email,
-  //       password: password
-  //     }
-  //   });
-  //   setName("");
-  //   setEmail("");
-  //   setPassword("");
-  //   Router.push(`localhost:3000/user/@${email}`);
-  // };
-
   return (
     <Fragment>
       <Mutation mutation={SIGNUP}>
@@ -53,17 +36,22 @@ const signup = props => {
             <form
               onSubmit={async e => {
                 e.preventDefault();
-                await signup({
+                const token = await signup({
                   variables: {
                     name: name,
                     email: email,
                     password: password
                   }
                 });
+                const timestamp = new Date().getTime();
+                const exp = timestamp + 60 * 60 * 24 * 1000 * 7;
+                document.cookie = `id_token = ${
+                  token.data.login
+                }; expires=${exp};`;
                 setName("");
                 setEmail("");
                 setPassword("");
-                Router.push(`localhost:3000/user/@${email}`);
+                Router.push(`/user/@${email}`);
               }}
             >
               <div>
@@ -112,54 +100,3 @@ const signup = props => {
 };
 
 export default signup;
-
-// <div>
-//   <Formik
-//     initialValues={{
-//       name: null,
-//       email: null,
-//       password: null
-//     }}
-//     render={({ values, resetForm }) => (
-//       <Form
-//         onSubmit={async e => {
-//           console.log(e);
-//           e.preventDefault();
-//           const { email } = values;
-//           await signup({
-//             variables: {
-//               name: values.name,
-//               email: values.email,
-//               password: values.password
-//             }
-//           });
-//           resetForm({
-//             name: null,
-//             email: null,
-//             password: null
-//           });
-//           Router.push(`localhost:3000/user/@${email}`);
-//         }}
-//       >
-//         <div>
-//           <label>Name</label>
-//           <br />
-//           <Field name="name" />
-//         </div>
-//         <br />
-//         <div>
-//           <label>Email</label>
-//           <br />
-//           <Field name="email" />
-//         </div>
-//         <br />
-//         <div>
-//           <label>Password </label>
-//           <br />
-//           <Field name="password" type="password" />
-//         </div>
-//         <br />
-//         <button type="submit">Sign up!</button>
-//       </Form>
-//     )}
-//   />
