@@ -27,7 +27,7 @@ const userProfile = props => {
           if (data) {
             return (
               <Fragment>
-                <p>Welcome back, {data.me.name}</p>
+                <p>Welcome, {data.me.name.split(" ")[0]}</p>
                 <br />
                 To view your dashboard, click
                 <Link href="/">

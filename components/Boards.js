@@ -2,8 +2,6 @@ import Link from "next/link";
 import { jsx } from "@emotion/core";
 import React, { Fragment, useState } from "react";
 import Router from "next/router";
-import List from "./List";
-import Board from "./Board";
 
 const Boards = props => {
   const { _id } = props;
@@ -11,30 +9,23 @@ const Boards = props => {
   const [showBoard, setShowBoard] = useState(null);
 
   const handleClick = event => {
-    debugger;
-    setShowBoard(event.target.id);
+    Router.push({
+      pathname: "/board",
+      query: { id: event.target.id }
+    });
   };
-
-  const lists =
-    props.lists && props.lists.length ? (
-      props.lists.map((list, index) => (
-        <Fragment>
-          <List title={list.title} key={index} />
-        </Fragment>
-      ))
-    ) : (
-      <div />
-    );
 
   return (
     <div
+      css={{ position: "sticky", zIndex: 0 }}
       _id={_id}
       css={{ border: "1px solid rgb(240, 210, 75)", cursor: "pointer" }}
       onClick={handleClick}
     >
-      <p id={_id}>Title:{props.title}</p>
+      <h1 css={{ fontSize: "1.2rem" }} id={_id}>
+        {props.title}
+      </h1>
       {showBoard ? <Board _id={_id} /> : <div />}
-      <ul>{lists}</ul>
     </div>
   );
 };

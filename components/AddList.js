@@ -1,57 +1,49 @@
-import { jsx } from "@emotion/core";
 import React, { Fragment, useState } from "react";
 import { Mutation } from "react-apollo";
 import gql from "graphql-tag";
 import uuid from "uuid";
 
-const CREATE_BOARD = gql`
-  mutation createBoard(
-    $_id: ID
-    $user_id: ID
-    $title: String!
-    $deadline: GraphQLDate
-  ) {
-    createBoard(
-      _id: $_id
-      user_id: $user_id
-      title: $title
-      deadline: $deadline
-    ) {
-      _id
-      title
-      members {
-        _id
-      }
-    }
+const CREATE_LIST = gql`
+  mutation addListToBoard($board_id: ID!, $_id: ID!, $title: String!) {
+    addListToBoard(board_id: $board_id, _id: $_id, title: $title)
   }
 `;
 
-const AddBoard = props => {
+const AddList = props => {
   const [title, setTitle] = useState("");
 
-  const user_id = props._id;
+  const { board_id } = props;
+
+  const _id = uuid();
 
   const { recordButtonPress } = props;
 
-  const board_id = uuid();
-
   const handleTitleChange = event => {
     setTitle(event.target.value);
+    event.stopPropagation();
   };
 
   return (
     <Fragment>
-      <Mutation mutation={CREATE_BOARD}>
-        {(createBoard, { loading, error, data }) => (
-          <div>
+      <Mutation mutation={CREATE_LIST}>
+        {(createList, { loading, error, data }) => (
+          <div
+            css={{
+              position: "sticky",
+              zIndex: 2,
+              padding: "5%",
+              marginBottom: "5%"
+            }}
+          >
             <form
               onSubmit={async e => {
                 e.preventDefault();
-                await createBoard({
+                e.stopPropagation();
+                await createList({
                   variables: {
                     title: title,
-                    _id: board_id,
-                    user_id: user_id
+                    board_id: board_id,
+                    _id: _id
                   }
                 });
                 recordButtonPress();
@@ -59,7 +51,7 @@ const AddBoard = props => {
               }}
             >
               <div>
-                <label>Give your board a title</label>
+                <label>Give your list a title</label>
                 <br />
                 <br />
                 <input
@@ -72,8 +64,14 @@ const AddBoard = props => {
                 <br />
               </div>
               <div>
-                <button type="submit">Create</button>
+                <button
+                  css={{ backgroundColor: "#fff", color: "rgb(240, 210, 75)" }}
+                  type="submit"
+                >
+                  Create
+                </button>
               </div>
+              <br />
               <br />
             </form>
             {loading && <p>Loading...</p>}
@@ -86,4 +84,4 @@ const AddBoard = props => {
   );
 };
 
-export default AddBoard;
+export default AddList;

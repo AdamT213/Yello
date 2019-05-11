@@ -4,54 +4,58 @@ import { Mutation } from "react-apollo";
 import gql from "graphql-tag";
 import uuid from "uuid";
 
-const CREATE_BOARD = gql`
-  mutation createBoard(
+const CREATE_CARD = gql`
+  mutation addCardToBoard(
     $_id: ID
-    $user_id: ID
-    $title: String!
-    $deadline: GraphQLDate
+    $list_id: ID
+    $board_id: ID
+    $title: String
   ) {
-    createBoard(
+    addCardToBoard(
       _id: $_id
-      user_id: $user_id
+      list_id: $list_id
+      board_id: $board_id
       title: $title
-      deadline: $deadline
-    ) {
-      _id
-      title
-      members {
-        _id
-      }
-    }
+    )
   }
 `;
 
-const AddBoard = props => {
+const AddCard = props => {
   const [title, setTitle] = useState("");
 
-  const user_id = props._id;
+  const { board_id, list_id } = props;
+
+  const _id = uuid();
 
   const { recordButtonPress } = props;
 
-  const board_id = uuid();
-
   const handleTitleChange = event => {
     setTitle(event.target.value);
+    event.stopPropagation();
   };
 
   return (
     <Fragment>
-      <Mutation mutation={CREATE_BOARD}>
-        {(createBoard, { loading, error, data }) => (
-          <div>
+      <Mutation mutation={CREATE_CARD}>
+        {(addCardToBoard, { loading, error, data }) => (
+          <div
+            css={{
+              position: "sticky",
+              zIndex: 2,
+              padding: "5%",
+              marginBottom: "5%"
+            }}
+          >
             <form
               onSubmit={async e => {
                 e.preventDefault();
-                await createBoard({
+                e.stopPropagation();
+                await addCardToBoard({
                   variables: {
                     title: title,
-                    _id: board_id,
-                    user_id: user_id
+                    board_id: board_id,
+                    list_id: list_id,
+                    _id: _id
                   }
                 });
                 recordButtonPress();
@@ -59,7 +63,7 @@ const AddBoard = props => {
               }}
             >
               <div>
-                <label>Give your board a title</label>
+                <label>Give your card a title</label>
                 <br />
                 <br />
                 <input
@@ -75,6 +79,7 @@ const AddBoard = props => {
                 <button type="submit">Create</button>
               </div>
               <br />
+              <br />
             </form>
             {loading && <p>Loading...</p>}
             {error && <p>An error occurred</p>}
@@ -86,4 +91,4 @@ const AddBoard = props => {
   );
 };
 
-export default AddBoard;
+export default AddCard;

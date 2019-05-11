@@ -34,23 +34,14 @@ app.prepare().then(async () => {
 
     const db = client.db(process.env.dbName);
     const Boards = db.collection("boards");
-    const Cards = db.collection("cards");
     const Users = db.collection("users");
 
     const resolvers = {
       board: async args => {
         try {
-          const board = Boards.findOne(args);
-          const cards = [];
-          if (board && board.lists && board.lists.length) {
-            board.lists.map(list => {
-              list.cards.map(card => {
-                const theCard = Cards.findOne({ _id: card._id });
-                cards.push(theCard);
-              });
-            });
-          }
-          return { board: board, cards: cards };
+          const board = await Boards.findOne(args);
+          console.log(board);
+          return board;
         } catch (e) {
           throw new Error(e);
         }
@@ -64,8 +55,6 @@ app.prepare().then(async () => {
           throw new Error(e);
         }
       },
-      card: async args => Cards.findOne(args),
-      cards: async () => Cards.find({}).toArray(),
       createBoard: async args => {
         try {
           let board = await Boards.insertOne({
@@ -90,9 +79,21 @@ app.prepare().then(async () => {
           throw new Error(e);
         }
       },
-      createCard: async args => {
-        const card = await Cards.insertOne(args);
-        return card.ops[0];
+      addCardToBoard: async args => {
+        let updated = await Boards.updateOne(
+          { _id: args.board_id },
+          {
+            $push: {
+              cards: {
+                _id: args._id,
+                title: args.title,
+                list_id: args.list_id,
+                board_id: args.board_id
+              }
+            }
+          }
+        );
+        return updated.modifiedCount;
       },
       me: async (args, context) => {
         try {
@@ -102,17 +103,17 @@ app.prepare().then(async () => {
         }
       },
       signup: async ({ name, email, password }) => {
-        console.log(name);
         const user = await Users.insertOne({
           name,
           email,
           password: await bcrypt.hash(password, 10)
         });
+        const info = user.ops[0];
         // return json web token
         return jsonwebtoken.sign(
-          { _id: user._id, email: user.email },
+          { _id: info._id, email: info.email },
           process.env.JWT_SECRET,
-          { expiresIn: "1y" }
+          { expiresIn: "1d" }
         );
       },
       login: async ({ email, password }) => {
@@ -143,7 +144,6 @@ app.prepare().then(async () => {
         }
       },
       addBoardToUser: async args => {
-        console.log(args);
         const res = await Users.updateOne(
           { _id: args.user_id },
           { $push: { boards: { _id: args._id } } }
@@ -186,11 +186,14 @@ app.prepare().then(async () => {
       },
       addListItemToCard: async args => {
         try {
-          const res = await Cards.updateOne(
-            { _id: args.card_id },
+          console.log(args.board_id);
+          const res = await Boards.updateOne(
+            { _id: args.board_id, "cards._id": args.card_id },
             {
               $push: {
-                checklist: {
+                "cards.$.checklist": {
+                  card_id: args.card_id,
+                  board_id: args.board_id,
                   _id: args._id,
                   description: args.description,
                   status: args.status
@@ -205,9 +208,23 @@ app.prepare().then(async () => {
       },
       markListItemComplete: async args => {
         try {
-          const res = await Cards.updateOne(
-            { _id: args.card_id },
-            { $set: { "checklist.0": [{ status: true }] } }
+          const res = await Boards.updateOne(
+            { _id: args.board_id },
+            {
+              $set: {
+                "cards.$[i].checklist.$[j].status": true
+              }
+            },
+            {
+              arrayFilters: [
+                {
+                  "i._id": args.card_id
+                },
+                {
+                  "j._id": args._id
+                }
+              ]
+            }
           );
           return res.modifiedCount;
         } catch (e) {
@@ -256,6 +273,10 @@ app.prepare().then(async () => {
 
     server.get("/user/:email", (req, res) => {
       return app.render(req, res, "/user", { email: req.params.email });
+    });
+
+    server.get("/board/:id", (req, res) => {
+      return app.render(req, res, "/board", { id: req.params.id });
     });
 
     server.listen(port, err => {

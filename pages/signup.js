@@ -46,12 +46,15 @@ const signup = props => {
                 const timestamp = new Date().getTime();
                 const exp = timestamp + 60 * 60 * 24 * 1000 * 7;
                 document.cookie = `id_token = ${
-                  token.data.login
+                  token.data.signup
                 }; expires=${exp};`;
                 setName("");
                 setEmail("");
                 setPassword("");
-                Router.push(`/user/@${email}`);
+                Router.push({
+                  pathname: "/user",
+                  query: { email: email }
+                });
               }}
             >
               <div>
